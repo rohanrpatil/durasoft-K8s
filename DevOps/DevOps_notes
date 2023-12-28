@@ -1,0 +1,691 @@
+
+
+
+******************************************************************
+**************************Docker**********************************
+DOCKER
+
+# Source code is available at https://github.com/docker/docker-install/
+#
+# Usage
+# ==============================================================================
+#
+# To install the latest stable versions of Docker CLI, Docker Engine, and their
+# dependencies:
+#
+# 1. download the script
+#
+#   $ curl -fsSL https://get.docker.com -o install-docker.sh
+#
+# 2. verify the script's content
+#
+#   $ cat install-docker.sh
+#
+# 3. run the script with --dry-run to verify the steps it executes
+#
+#   $ sh install-docker.sh --dry-run
+#
+# 4. run the script either as root, or using sudo to perform the installation.
+#
+#   $ sudo sh install-docker.sh
+===============================================================
+
+Create a container on docker:
+container name: mycl
+container port:8081
+image: nginx
+-p : for port mapping
+-d : to run background
+--name: to provide name of container
+
+docker run --name myc1 -d -p 8081:80 nginx
+
+
+Package install
+To check the installed package
+rpm -qa
+rpm -qa | grep ftp
+
+To remove package
+rpm -e PACKAGENAME
+
+Using yum
+install
+
+yum install PACKAGENAME
+EX:
+sudo yum install -y ansible
+
+Version checked of package
+sudo yum list ansible
+
+remove package
+sudo yum remove -y ansible
+
+To install spcific version package
+sudo yum install -y ansible-2.8.11
+
+=============================================
+
+Docker 
+
+Docker edition:
+1. Community  --- free version 
+2. Enterprise  --- paid one
+
+Container's are used to run application/db etc. We can't install OS on container.
+OS is installed on host and on host we install docker, where we run containers.
+Entire memory can be used with high performance.
+
+
+To install the docker on host:
+Install docker
+https://get.docker.com/
+# curl -fsSL https://get.docker.com -o install-docker.sh
+# sh install-docker.sh
+# docker --version  OR docker version
+
+create a container:
+docker run --name CONTAINER_NAME -d -p 8080:80 IMAGE_NAME
+-d : in deattached mode/background mode.
+It will create  a container the latest version of the IMAGE.
+docker run = search image + pull image + create container
+
+If we need to create a container with some specific version
+docker run --name CONTAINER_NAME -d IMAGE_NAME:VERSIOn
+
+
+
+
+docker ps ----- all running containers
+docker ps -a   ------- all containers.
+
+docker stop containerNAME/containe_ID     ------- to stop the containerNAME/containe_ID
+docker start containerNAME/containe_ID    --------- to start the container 
+
+docker rm containerNAME/containe_ID     ------ to remove the container
+docker images   -------- to see all images present on the docker
+docker rmi imageNAME        ---------- to remove the image (attached images with container can't be removed).
+docker rmi $(docker images -aq)   ---- remove all images at once
+docker rm $(docker ps -a -q)  --------- to delete all the containers.
+docker start $(docker ps -aq)  ------- to start all the containers.
+
+q: will provide the ids.
+-f : forcefully.
+
+*** running containers can't be removed directly. First needs to be stopped.
+
+-----------------------------------------------
+
+Docker-Container Architecture
+
+1. Docker Client   ----- It is used to run the "docker run" command.
+2. Docker Engine    ----- When docker is installed, it will run on "docker engine" service.
+3. Docker registry   ----- It is the directory were all the images are stored ie Docker Hub.
+
+*****when we run "docker run --name CONTAINER_NAME -d IMAGE_NAME" command then---
+1. It will search the image first in local image registry (if image is present then container will be created) else
+2. It will pull the images from docker registry ie docker hub and will create a container.
+
+-----------------------------------------------
+
+docker inspect CONTAINER_NAME     ----- gives details of container (like id, state, image, process id, mounts, network setting etc)
+
+docker pull IMAGE_NAME    ---- to pull the image from docker hub
+docker search IMAGE_NAME   --- to search the image
+
+Container states:
+1. Running
+2. Stoppped
+3. Exited -- when we create or update the container compose file with invalid commands.
+4. Dead -- containers those are not in operational and are safe to remove.
+
+-----------------------------------------------
+
+Container modes:
+1. Deattach (-d)
+ex: docker run --name CONTAINER_NAME -d IMAGE_NAME
+
+2. Attach (without any option) :  It will create a container but will go in exited state. We need to start it.
+ex: docker run --name CONTAINER_NAME IMAGE_NAME
+
+3. Interaction (-it)  --- to get into the container.
+ex: docker exec -it CONTAINER_NAME/CONTAINER_ID /bin/bash
+
+
+Check the docker service status
+service docker status    
+
+-----------------------------------------------
+
+Port mapping or port expose
+
+- it is used to accesss the container application to the outsider.
+- Default container ports:
+80 - nginx/apache
+8080 - tomcat
+
+ex_1: when we create a container tomcat (8080) and outsider want to access it
+docker run --name CONTAINER_NAME -d -p 80:8080 tomcat
+
+80 - docker port
+8080 - container port
+
+-- here outsider will connect with VM_IP:80 to access tomcat container
+-- internally 80 will take the response from 8080 and provide to the user on 80.
+
+
+ex_2: when we create a container tomcat (8080) and outsider want to access it
+docker run --name CONTAINER_NAME -d -p 8081:8080 tomcat
+
+8081 - docker port
+8080 - container port
+
+Access tomcat container through VM_IP:8081
+
+-----------------------------------------------
+
+**** docker container use encryption SHA256 algorithm
+Running container files and config path:
+/var/lib/docker/containers
+
+All container image path (running/stopped/deleted).
+It can fetch from docker inspect CONTAINER_NAME
+/var/lib/docker/overlay2
+***in image if we find --init then it's active with running container.
+
+-----------------------------------------------
+
+docker system df     === check container/volume disk usage.
+
+volume mapping at a runtime ie while creating a container
+docker run --name CONTAINER_NAME -v VOLUME_on_docker:Volume:on_CONTAINER -d IMAGE_NAME
+
+-v : volume mapping (it will create a directory if not present)
+--volume : volume mapping, it won't create a directory.
+
+-----------------------------------------------
+
+image creation of container
+
+docker commit CONTAINER_NAME IMAGE_NAME      ---- this will create a image of container
+docker commit CONTAINER_NAME IMAGE_NAME:tag  ---- this will create a image with tag
+
+docker image tag IMAGE_NAME IMAGE_NAME:tag   ---- to create a new image from existing image with tag.
+
+pull images are stored in
+/var/lib/docker/image/overlay2/imagedb/content/sha256
+
+tag or images created from container are stored in 
+/var/lib/docker/image/overlay2/imagedb/metadata/sha256
+
+-----------------------------------------------
+
+Create / build an image:
+
+steps:
+1. create a Dockerfile
+2. Build a image
+3. create a container from the image.
+
+create a Docker file:
+- no extension needed to the Dockerfile.
+ex: vi Dockerfile
+
+1. Dockerfile creation
+-------
+FROM ubuntu:20.04    ------ from where this Dockerfile is creating ie based OS OR another imagename 
+MAINTAINER Rohan     ------ who is creating this Dockerfile
+RUN apt-get update   ------ to run the apt-get update whenever a container is created from this Dockerfile
+CMD ["echo", "This is my first container, created from DockerFile"]   --- only CMD command will be executed while creating a container ir runtime
+-------
+
+note:
+Always start from RUN instructions.
+All the instructions are in CAPS and in left.
+
+
+2. Build image from Dockerfile
+docker build -t IMAGE_NAME:TAG_NAME Directory_Path 
+
+-t : target image (ie image name)
+directory paht : where the Dockerfile is present.
+
+3. create a container from image
+docker run CONTAINER_NAME IMAGE_NAME    ---- this container will go in exited state once run.
+
+
+To check the history of the image.
+docker history IMAGE_NAME
+
+
+ADD : While creating the image, we can download files from distant HTTP/HTTPS destinations using the ADD command.
+ex:
+ADD https://get.jenkins.io/war/2.397/jenkins.war
+
+COPY: The copy command is used to copy the file/folders to the image while building the image. 
+ex:
+COPY target/java-web-app.war  /usr/local/tomcat/webapps/java-web-app.war
+
+EXPOSE 8080
+TO expose the port of the container
+
+-----------------------------------------------
+
+Network
+
+docker network ls   ---- to see the network 
+
+**while container is created network is created.
+** we can check the network id through docker inspect
+
+Create a network:
+docker network create -d bridge subnet 192.168.0.1/24 NETWORK_NAME
+-d : driver of bridge network
+
+create container with our network
+docker run --name CONTAINER_NAME -d --network NETWORK_NAME IMAGE_NAME.
+
+-----------------------------------------------
+
+Memory CPU allocation to the containers
+ie cgroup memory   (Control Group)
+
+***we need to add the setting in grub file on host.
+/etc/default/grub
+
+add the following two key-value pairs:
+● GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1"
+● sudo update-grub
+● sudo reboot
+
+docker stats   ----- to check container memory, CPU usage and limit.
+
+To assign memory to the container
+docker run --name CONTAINER_NAME -d --memory="100m" --memory-swap="200m" --memory-reservation="512m" IMAGE_NAME
+
+
+To assign the CPU to the contaner.
+docker run --name CONTAINER_NAME --cpus=.5 -d -p 8081:80 IMAGE_NAME
+
+
+**** we can only assign resources during the runtime ie while container is created.
+
+
+-----------------------------------------------
+
+To push the image to the docker hub repository.
+
+1. need to create a account in docker hub and create a repository
+2. need to tag image with your repository
+docker tag IMAGE_NAME:TAG REgistry_OR_USername:NewTAG
+
+image_name : on host image is present with tag
+REgistry_OR_USername :  your docker hub username and registry path
+new tag: updated tag 
+
+ex:
+docker tag myimagetest:latest patilrohann/azure_devops_class:test
+
+myimagetest:latest -- image present on host machine
+patilrohann/azure_devops_class  --- docker hub repo
+test  -- new tag by which want to save on docker hub
+
+3. push the image on docker registry
+docker push imageNAME:tag
+
+ex:
+docker push patilrohann/azure_devops_class:test
+
+
+
+
+Pull image from docker repo
+docker pull docker_reponame:tag
+
+ex:
+docker pull patilrohann/azure_devops_class:test
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+=======================================================================
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Kubernetes K8s
+
+It is an extension of docker.
+
+API server: like brain, it takes the decisions
+Cluster storage: like memory to store the things
+Kube control node: It monitores (resources, node creations etc) the things and stores the information in cluster storage.
+Scheduler: It assigns the task/works to the nodes.
+
+**master and worker nodes should be in the same network.
+** minimum 4 GB RAM is needed.
+
+cluster >> node >> pods >> container
+
+-----------------------------------------------
+
+Installation steps:
+Steps to Install Kubernetes on Ubuntu 20
+Create 3 ubuntu 20 linux servers with Ds2 ( CPU 2 core, 4 gb
+RAM)
+
+Set up Docker
+ON 3 servers( on master and nodes)
+
+1) Create 3 Azure VM instance with ubuntu 20 and ds2 on SAME network
+2) sudo apt-get update
+3) sudo apt-get install docker.io -y
+4) sudo systemctl enable docker
+5) sudo systemctl restart docker
+
+
+Install Kubernetes
+ON 3 servers( on master and nodes)
+
+6) curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
+7) sudo apt-get install curl
+8) sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+9) sudo apt-get update
+10) apt install kubeadm=1.20.0-00 kubectl=1.20.0-00 kubelet=1.20.0-00 -y
+11) sudo apt-mark hold kubeadm kubelet kubectl
+
+ON Master only:
+12) sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+After running the above command we will get KUBEADM JOIN command and like 12-14 steps command. 
+kubeadmin join command will vary as per the master.
+
+----------
+sample
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 10.0.0.6:6443 --token xx4vmr.o9ijgbinkum00lso \
+    --discovery-token-ca-cert-hash sha256:1bc2c2349669832624ea092f09425414a29fe10e771dbceb6a2d98ed7c74b49c 
+-------
+
+12) kubernetes-master:~$ mkdir -p $HOME/.kube
+13) kubernetes-master:~$ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+14) kubernetes-master:~$ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+15) sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+ON All NODES to attach node to the master:
+16) kubeadm join --discovery-token abcdef.1234567890abcdef
+--discovery-token-ca-cert-hash sha256:1234..cdef 1.2.3.4:6443
+
+ON Master:
+17) kubectl get nodes
+18) kubectl get pods
+
+
+If you forgot the adm token:
+kubeadm token create --print-join-command
+-----------------------------------------------
+
+Pods creation:
+-- it's a space where we create a containers.
+-- using MANFEST file we can create a pods.
+-- when we run Kubectl to create pod...APIserver will assign it to the scheduler and scheduler will assign it to the nodes.
+inside nodes there is agent and kubelet will create a pod.
+
+Process of Pod creation and container.
+
+manfest file >> API server (based on controller and storage API server) >> Scheduler >> Node >> Kublet agent >> Pod will be created.
+Pod >> Kube proxy >> container engine >> container will be created.
+
+kubectl create -f MANFEST_FILE
+-f : file
+ex.
+kubectl create -f firstpod.yml
+
+kubectl delete pod POD_name    ---- delete pod
+
+●kubectl get nodes    ----- to see the nodes
+●kubectl create -f MANFEST_FILE    ---- to create a pod
+●kubectl get pods    ---- see list of pods
+●kubectl describe pod POD_name   ---- to see more details of pod
+●kubectl get pods -o wide
+●kubectl get pods --all-namespaces
+●kubectl delete pod POD_name     ------ to delete pod
+
+--------------------------------
+
+Manfest file:
+
+extension is .jason or .yml
+
+ex:
+
+apiVersion: v1     -------- it is standard. K8s version.
+kind: Pod          ------- Creation of Pod
+metadata:       -------- description about your Pod
+   name: hello-pod     -----  pod name  
+spec:
+   containers:     ---------- container description
+   - name: first-container     -------- container name
+     image: nginx    ----------- container image
+     ports:      ------------- defining port
+      - containerPort: 80     --------- exposing port of the container.
+
+
+
+
+------
+
+Once the manfest file is created we have to push it in GIT.
+
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+=======================================================================
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+*****************************GIT***************************************
+
+
+
+source: YT WsCube Tech
+
+GIT
+
+- Global Information Tracker
+- used for version controlling or source code controlling.
+- It is distributed version controlling tool.
+- CLI and GUI are present.
+- multiple people can work simultaneously through branches
+- Alertnative of GIT - HelixCORE, Azure DevOPS server, AWS codecommit
+
+GIT installation:
+https://git-scm.com
+
+To configure the username in GIT CLI.
+git config user.name "USERNAME"
+
+To configure email address
+git config user.email "EMAIL_ADDRESS"
+
+To check the GIT configuration like username, email address
+git config --list
+
+---------------------------------------------------
+
+GIT stages:
+1. working directory  -- user actual working directory
+2. staging area  -- once work is completed user can safely move it in staging area. 
+                    Used to verify the things before moving to push in repositoy.
+3. GIT direcotry (repository) -- once commit from staging area then it will move to GIT repo.
+
+---------------------------------------------------
+
+To make the folder to use GIT (on desktop, go the folder and right click with gitbash) enter the command
+git init    ---- To initialise the GIT for the current directory. It will create a hidden directory of GIT to use.
+
+To check if any new file is added in the directory.
+git status
+
+
+To add all files in staging area from working directory.
+git add --a  (--a all files)
+git add FILENAME   ( to add a file in staging area)
+
+To commit all files from staging area
+git commit -a -m "MESSAGE"     (-m = message, -a = all files)
+
+To commmit specific file:
+git commit -m "MESSAGE" FILENAME
+
+.code   --- to open all files from current directory in Visual studio code.
+
+git log    --- to check the logs after commit a file..
+
+To clone (copy) the files from GIThub
+git clone URL_of_project/file
+
+
+---------------------------------------------------
+
+GIT ignore file (it will ignore the file when you commit or add)
+1. create a new file under working directory as
+.gitignore      --- need to open a file in code editor
+2. add file name which needs to ignore in .gitignore file
+
+If you need to ignore specific files like .log then add it in gitignore file like
+*.log
+
+To ignore directory/folder like demo folder
+demo/
+
+---------------------------------------------------
+
+To find the difference when new code is added in the file (only work when file is in working area)
+git diff FILENAME    --- it compares the data of staging area and working area.
+
+git diff --staged FILENAME   --- compares file data from staged and commit directory
+
+---------------------------------------------------
+
+
+Skipping staging area (directly working directory to GIT Repo)
+untracked file (newly added) can't be directly commit. First need to track (add in staged, atleast once) then can be commit.
+
+
+
+1. New file (in working directory) ie Untracked file
+git add FILENAME   
+2. Staging area ie Tracked file
+git commit -m "MESSAGE" FILENAME
+3. GIT Repo ie commit area
+
+To make the file unstagged from staging area.
+git restore --stage FILENAME
+
+To restore the files from last commit.
+git restore FILENAME
+git checkout -f   -- to restore all files
+
+To rename the file
+git mv FILENAME to NEW_FILENAME    ---- mv will directly put the file in staging area.
+
+If we rename the file from directly (right click rename) then we will need to put it in stagged area.
+
+
+To remove the file
+git rm FILENAME     ---- rm will directly put the file in staging area.
+
+To remnove the cache content
+git rm --cached FILENAME
+
+---------------------------------------------------
+
+Sending files from GIT repo to Remote Repository.
+
+1. need to create a SSH key in GIThub (if not created earlier).
+Search in Google for github SSH key and 
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+
+In GIT Bash.
+Paste the text below, replacing the email used in the example with your GitHub email address.
+ssh-keygen -t ed25519 -C "your_email@example.com"
+eval "$(ssh-agent -s)"      ------- to check SSH agent status
+ssh-add ~/.ssh/id_ed25519   -------- to add SSH key/create an identity to your email address
+
+To add SSH key to your account:
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
+
+clip < ~/.ssh/id_ed25519.pub    ----- to copy ssh key in the clipboard.
+tail < ~/.ssh/id_ed25519.pub    -------- to see the SSH key.
+
+GITHUB >> Setting >> SSH and GPG keys
+
+---------------------------------------------------
+
+GIT branches:
+Multiple developer works simultaneously and can merge once work is done.
+
+To create a new branch and we will switch from master branch to new_brach
+git checkout -b BRANCH_NAME
+
+To switch to MASTER branch
+git checkout master
+
+To check the number branches
+git branch
+
+How to merge the branches files into master.
+git merge BRANCH_NAME
+
+To check the remote repo
+git remote -v 
+
+Aliase setup in GIT
+git config --global alias.s status
+here s is set for status
+
+check all alias
+git config | grep alias
+
+Remove alias
+git config --global --unset alias.NAME
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+=======================================================================
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://github.com/maha4dsvc/myK8s_M_DS_9AM_27dec23      ---- git maha 
